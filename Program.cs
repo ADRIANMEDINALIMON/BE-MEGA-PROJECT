@@ -25,7 +25,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 
 // Configure the HTTP request pipeline.
@@ -34,6 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(); // Interfaz visual de Swagger
 }
+
 
 app.MapControllers();/// por ahora
 
