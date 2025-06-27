@@ -1,4 +1,5 @@
-﻿using BE_MEGA_PROJECT.Models;
+﻿using BE_MEGA_PROJECT.DTOs;
+using BE_MEGA_PROJECT.Models;
 using BE_MEGA_PROJECT.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -31,10 +32,37 @@ namespace BE_MEGA_PROJECT.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Promotion promo)
+        public async Task<IActionResult> Post([FromBody] CreatePromotionDTO dto)
         {
-            var created = await _service.Create(promo);
-            return Ok(created);
+            var promotion = new Promotion
+            {
+                Name = dto.Name,
+                Description = dto.Description,
+                DiscountType = dto.DiscountType,
+                DiscountAmount = dto.DiscountAmount,
+                TargetType = dto.TargetType,
+                TargetId = dto.TargetId,
+                AppliesTo = dto.AppliesTo,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Active = dto.Active,
+                ServiceId = dto.ServiceId
+            };
+            try
+            {
+                var created = await _service.Create(promotion);
+                return Ok(created);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+
+            }
+            catch (Exception ex) {
+                // Para errores inesperados (BD caída, etc.)
+                return StatusCode(500, new { message = "Error interno del servidor.", details = ex.Message });
+
+            }
         }
 
         [HttpPut]
