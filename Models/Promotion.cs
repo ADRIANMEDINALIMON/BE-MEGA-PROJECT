@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using BE_MEGA_PROJECT.Enums;
 
 namespace BE_MEGA_PROJECT.Models
 {
@@ -16,19 +17,19 @@ namespace BE_MEGA_PROJECT.Models
 
         [Required]
         [MaxLength(10)] // 'PERCENT' o 'FIXED'
-        public string DiscountType { get; set; }
+        public DiscountType DiscountType { get; set; }
 
         public decimal DiscountAmount { get; set; }
 
         [Required]
         [MaxLength(20)] // 'CITY', 'PACKAGE', etc.
-        public string TargetType { get; set; }
+        public TargetType TargetType { get; set; }
 
         public int TargetId { get; set; }
 
         [Required]
         [MaxLength(20)] // 'MONTHLY' o 'SETUP'
-        public string AppliesTo { get; set; }
+        public AppliesTo AppliesTo { get; set; }
 
         public DateTime StartDate { get; set; }
 

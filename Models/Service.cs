@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace BE_MEGA_PROJECT.Models
 {
@@ -16,6 +17,7 @@ namespace BE_MEGA_PROJECT.Models
 
         // Navegación inversa
         public ICollection<PackageService> PackageServices { get; set; }
+        [JsonIgnore]
         public ICollection<Promotion> Promotions { get; set; }
 
     }

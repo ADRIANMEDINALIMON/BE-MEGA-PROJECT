@@ -62,6 +62,20 @@ namespace BE_MEGA_PROJECT.Data
             modelBuilder.Entity<InvoicePromotion>()
                 .Property(ip => ip.DiscountAmount)
                 .HasPrecision(10, 2);
+            
+            modelBuilder.Entity<Promotion>()
+            .Property(p => p.DiscountType)
+            .HasConversion<string>();
+
+            modelBuilder.Entity<Promotion>()
+            .Property(p => p.TargetType)
+            .HasConversion<string>();
+
+            modelBuilder.Entity<Promotion>()
+            .Property(p => p.AppliesTo)
+            .HasConversion<string>();
+
+
 
         }
 
