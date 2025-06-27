@@ -36,7 +36,19 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
 
         public async Task<bool> UpdatePromotion(Promotion promotion)
         {
-            _context.Promotions.Update(promotion);
+            var existing = await _context.Promotions.FindAsync(promotion.Id);
+            if (existing == null) return false;
+            existing.Name = promotion.Name;
+            existing.Description = promotion.Description;
+            existing.DiscountType = promotion.DiscountType;
+            existing.DiscountAmount = promotion.DiscountAmount;
+            existing.TargetType = promotion.TargetType;
+            existing.TargetId = promotion.TargetId;
+            existing.AppliesTo = promotion.AppliesTo;
+            existing.StartDate = promotion.StartDate;
+            existing.EndDate = promotion.EndDate;
+            existing.Active = promotion.Active;
+            existing.ServiceId = promotion.ServiceId; 
             return await _context.SaveChangesAsync() > 0;
         }
 

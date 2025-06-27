@@ -31,6 +31,7 @@ namespace BE_MEGA_PROJECT.Controllers
         {
             
             var user = new User {
+                
                 Username = userDTO.Username,
                 PasswordHash = userDTO.PasswordHash,
                 FullName = userDTO.FullName,

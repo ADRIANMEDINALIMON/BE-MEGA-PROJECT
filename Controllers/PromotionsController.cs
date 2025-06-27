@@ -66,16 +66,45 @@ namespace BE_MEGA_PROJECT.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> Put([FromBody] Promotion promo)
+        public async Task<IActionResult> Put([FromBody] UpdatePromotionDTO dto)
         {
-            var updated = await _service.Update(promo);
-            return updated ? Ok(promo) : BadRequest();
+            var promotion = new Promotion
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Description = dto.Description,
+                DiscountType = dto.DiscountType,
+                DiscountAmount = dto.DiscountAmount,
+                TargetType = dto.TargetType,
+                TargetId = dto.TargetId,
+                AppliesTo = dto.AppliesTo,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Active = dto.Active,
+                ServiceId = dto.ServiceId
+            };
+
+            try {
+                var updated = await _service.Update(promotion);
+                return updated ? Ok(promotion) : BadRequest();
+            }
+            catch (ArgumentException ex) {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor.", details = ex.Message });
+
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _service.Delete(id);
+            if (!deleted) {
+                return StatusCode(404, new { message = "Promocion no encontrada." });
+            }
             return deleted ? Ok() : NotFound();
         }
     }

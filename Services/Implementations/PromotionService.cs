@@ -51,7 +51,7 @@ namespace BE_MEGA_PROJECT.Services.Implementations
         {
             if (promotion.ServiceId.HasValue)
             {
-                bool serviceExist = _context.Services.Any(s => s.Id == promotion.ServiceId.Value);
+                bool serviceExist =  _context.Services.Any(s => s.Id == promotion.ServiceId.Value);
                 if (!serviceExist)
                 {
                     throw new ArgumentException($"El servicio con ID {promotion.ServiceId.Value} no existe.");
@@ -60,9 +60,17 @@ namespace BE_MEGA_PROJECT.Services.Implementations
 
         }
 
-
-        public Task<bool> Update(Promotion promotion) => _repo.UpdatePromotion(promotion);
-        public Task<bool> Delete(int id) => _repo.DeletePromotion(id);
+        public async Task<bool> Update(Promotion promotion) {
+            ValidateDates(promotion);
+            await ValidateTargetExists(promotion);
+            if (promotion.ServiceId.HasValue)
+            {
+                await ValidateServiceExists(promotion);
+            }
+            return await _repo.UpdatePromotion(promotion); 
+        }
+        public Task<bool> Delete(int id) =>
+            _repo.DeletePromotion(id);
     } 
 
 }
