@@ -20,8 +20,28 @@ namespace BE_MEGA_PROJECT.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Get() =>
-        Ok(await _service.GetAll());
+        public async Task<IActionResult> Get() {
+            var entities = await _service.GetAll();
+
+            var dtoList = entities.Select(p => new UpdatePromotionDTO
+            {
+                Name = p.Name,
+                Description = p.Description,
+                DiscountType = p.DiscountType,
+                DiscountAmount = p.DiscountAmount,
+                TargetType = p.TargetType,
+                TargetId = p.TargetId,
+                AppliesTo = p.AppliesTo,
+                StartDate = p.StartDate,
+                EndDate = p.EndDate,
+                Active = p.Active,
+                ServiceId = p.ServiceId,
+                Id = p.Id
+            }).ToList();
+
+            return Ok(dtoList);
+
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
