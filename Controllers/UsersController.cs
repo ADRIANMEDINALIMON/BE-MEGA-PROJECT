@@ -46,8 +46,10 @@ namespace BE_MEGA_PROJECT.Controllers
         [HttpGet("{username},{password}")]
         public async Task<IActionResult> Authenticate(string username, string password)
         {
-            var users = await _userService.Authenticate(username,password);
-            return Ok(users);
+            var user = await _userService.Authenticate(username, password);
+            if (user == null)
+                return NotFound(new { message = "usuario o contraseña incorrectos" });
+            return Ok(user);
         }
 
 

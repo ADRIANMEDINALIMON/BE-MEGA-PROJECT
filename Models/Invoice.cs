@@ -30,5 +30,6 @@ namespace BE_MEGA_PROJECT.Models
         public DateTime GeneratedAt { get; set; } = DateTime.Now;
 
         public ICollection<InvoicePromotion> InvoicePromotions { get; set; }
+
     }
 }

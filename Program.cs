@@ -1,4 +1,3 @@
-
 using BE_MEGA_PROJECT.Data;
 using BE_MEGA_PROJECT.Repositories.Implementations;
 using BE_MEGA_PROJECT.Repositories.Interfaces;
@@ -9,45 +8,57 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 1) servicios comunes
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers();
 
-
-
+// 2) dbcontext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
+// 3) controllers + json options (para serializar enums como string)
+builder.Services
+  .AddControllers()
+  .AddJsonOptions(opts =>
+    opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
+  );
 
-///interfaces -> implementations
-///
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
+// 4) configuracion de cors para permitir peticiones desde el FE
+builder.Services.AddCors(opts =>
+  opts.AddDefaultPolicy(policy =>
+    policy.AllowAnyOrigin()
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+  )
+);
+
+// 5) inyeccion de repositorios / servicios
+builder.Services.AddScoped<IUserRepository,   UserRepository>();
+builder.Services.AddScoped<IUserService,      UserService>();
 
 builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
-builder.Services.AddScoped<IPromotionService, PromotionService>();
+builder.Services.AddScoped<IPromotionService,    PromotionService>();
 
-builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
-builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IInvoiceRepository,   InvoiceRepository>();
+builder.Services.AddScoped<IInvoiceService,      InvoiceService>();
 
 var app = builder.Build();
 
-//app.UseHttpsRedirection();
+// 6) pipeline de middlewares
 
-
-// Configure the HTTP request pipeline.
+// swagger solo en dev
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(); // Interfaz visual de Swagger
+    app.UseSwaggerUI();
 }
 
+// cors y https
+app.UseCors();
+app.UseHttpsRedirection();
 
-app.MapControllers();/// por ahora
+// mapea controladores
+app.MapControllers();
 
 app.Run();

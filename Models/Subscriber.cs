@@ -30,6 +30,7 @@ namespace BE_MEGA_PROJECT.Models
         [Required]
         [MaxLength(20)]
         public string AccountType { get; set; } // 'RESIDENTIAL' o 'BUSINESS'
+        public ICollection<Invoice> Invoices { get; set; }
 
   
 

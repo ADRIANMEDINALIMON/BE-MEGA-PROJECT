@@ -37,14 +37,18 @@ namespace BE_MEGA_PROJECT.Services.Implementations
         private async Task ValidateTargetExists(Promotion promotion) {
             bool exist = promotion.TargetType switch
             {
-                TargetType.CITY => _context.Cities.Any(c => c.Id == promotion.TargetId),
+                TargetType.CITY         => _context.Cities.Any(c => c.Id == promotion.TargetId),
                 TargetType.NEIGHBORHOOD => _context.Neighborhoods.Any(n => n.Id == promotion.TargetId),
-                TargetType.BRANCH => _context.Branches.Any(b => b.Id == promotion.TargetId),
-                _ => false,
+                TargetType.BRANCH       => _context.Branches.Any(b => b.Id == promotion.TargetId),
+                TargetType.PACKAGE      => _context.Packages.Any(p => p.Id == promotion.TargetId),  // <-- lo añadimos
+                _                       => false,
             };
-            if (!exist) { 
-                throw new ArgumentException($"El ID {promotion.ServiceId} no existe en la tabla {promotion.TargetType}");
-        }
+
+            if (!exist)
+            {
+                throw new ArgumentException(
+                    $"el id {promotion.TargetId} no existe en la tabla {promotion.TargetType.ToString().ToLower()}");
+            }
 
         }
         private async Task ValidateServiceExists(Promotion promotion)
