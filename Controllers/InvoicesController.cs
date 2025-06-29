@@ -22,20 +22,11 @@ namespace BE_MEGA_PROJECT.Controllers
             try
             {
                 var invoice = await _invoiceService.GenerateInvoice(request.SubscriberId, request.PeriodStart, request.PeriodEnd);
-                var dto= new InvoiceDTO
-                {
-                    Id = invoice.Id,
-                    PeriodStart = invoice.PeriodStart,
-                    PeriodEnd = invoice.PeriodEnd,
-                    BaseAmount = invoice.BaseAmount,
-                    TotalDiscount = invoice.TotalDiscount,
-                    TotalAmount = invoice.TotalAmount
-                };
-
-                return Ok(dto);
+               
+                return Ok(invoice);
             }
-            catch (Exception ex) {
-                return BadRequest(new { message = ex.Message });
+            catch (Exception ex) { 
+                                return BadRequest(new { message = ex.Message });
 
             }
         }

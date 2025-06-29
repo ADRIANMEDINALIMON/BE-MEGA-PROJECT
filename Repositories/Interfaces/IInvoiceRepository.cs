@@ -1,9 +1,10 @@
-﻿using BE_MEGA_PROJECT.Models;
+﻿using BE_MEGA_PROJECT.DTOs;
+using BE_MEGA_PROJECT.Models;
 
 namespace BE_MEGA_PROJECT.Repositories.Interfaces
 {
     public interface IInvoiceRepository
     {
-        Task<Invoice> GenerateInvoice(int suscriberId, DateTime periodStart, DateTime periodEnd);
+        Task<InvoiceDTO> GenerateInvoice(int suscriberId, DateTime periodStart, DateTime periodEnd);
     }
 }
