@@ -20,9 +20,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 3) controllers + json options (para serializar enums como string)
 builder.Services
   .AddControllers()
-  .AddJsonOptions(opts =>
-    opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
-  );
+  .AddJsonOptions(opts => {
+    // serializar enums como cadenas (ya lo tenías)
+    opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    // IGNORAR ciclos de referencia
+    opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+  });
 
 // 4) configuracion de cors para permitir peticiones desde el FE
 builder.Services.AddCors(opts =>
@@ -41,7 +44,11 @@ builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
 builder.Services.AddScoped<IPromotionService,    PromotionService>();
 
 builder.Services.AddScoped<IInvoiceRepository,   InvoiceRepository>();
-builder.Services.AddScoped<IInvoiceService,      InvoiceService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+builder.Services.AddScoped<ISubscriberService, SubscriberService>();
+builder.Services.AddScoped<ISubscriberRepository, SubscriberRepository>();
+
 
 var app = builder.Build();
 
