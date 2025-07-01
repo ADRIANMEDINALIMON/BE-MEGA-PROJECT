@@ -15,67 +15,75 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
         {
             _context = context;
         }
-
-        public async Task<InvoiceDTO> GenerateInvoice(int subscriberId, DateTime periodStart, DateTime periodEnd)
+        public async Task<InvoiceDTO> GenerateInvoice(int subscriberId, DateTime rangeStart, DateTime rangeEnd)
         {
-            var contract = await GetActiveContractFor(subscriberId, periodStart);
+            var contract = await GetActiveContractFor(subscriberId, rangeStart);
             if (contract == null)
                 throw new Exception("El suscriptor no tiene contrato activo en este período.");
 
             var services = GetContractServices(contract).ToList();
 
-            // Base mensual
+            // Base mensual unitaria (para mostrar en el DTO)
             decimal monthlyBaseAmount = services.Sum(s => s.MonthlyPrice);
+            decimal setupBaseAmount = 0;
 
-            // Detectar si es la primera factura
-            bool isFirstInvoice = contract.StartDate.Month == periodStart.Month &&
-                                  contract.StartDate.Year == periodStart.Year;
+            // Acumuladores de descuento total
+            decimal totalMonthlyDiscount = 0;
+            decimal totalSetupDiscount = 0;
+            decimal totalAmount = 0;
 
-            // Base de instalación solo si es la primera factura
-            decimal setupBaseAmount = isFirstInvoice ? services.Sum(s => s.SetupPrice) : 0;
+            var currentStart = new DateTime(rangeStart.Year, rangeStart.Month, 1);
+            var currentEnd = new DateTime(rangeEnd.Year, rangeEnd.Month, 1);
 
-            // Obtener promociones aplicables
-            var promotions = await GetApplicablePromotions(contract, periodStart, periodEnd);
+            bool setupAlreadyApplied = false;
 
-            // Calcular descuentos
-            var (monthlyDiscount, setupDiscount, invoicePromotions) =
-                CalculateDetailedDiscounts(services, promotions, monthlyBaseAmount, setupBaseAmount);
-
-            var invoice = new Invoice
+            while (currentStart <= currentEnd)
             {
-                SubscriberId = subscriberId,
-                ContractId = contract.Id,
-                PeriodStart = periodStart,
-                PeriodEnd = periodEnd,
-                BaseAmount = monthlyBaseAmount + setupBaseAmount,
-                TotalDiscount = monthlyDiscount + setupDiscount,
-                TotalAmount = (monthlyBaseAmount + setupBaseAmount) - (monthlyDiscount + setupDiscount),
-                GeneratedAt = DateTime.Now
-            };
+                DateTime periodStart = currentStart;
+                DateTime periodEnd = currentStart.AddMonths(1).AddDays(-1);
 
-            _context.Invoices.Add(invoice);
-            await _context.SaveChangesAsync();
+                bool isFirstInvoice = contract.StartDate.Month == periodStart.Month &&
+                                      contract.StartDate.Year == periodStart.Year;
 
-            // Guardar relación con promociones
-            foreach (var ip in invoicePromotions)
-            {
-                ip.InvoiceId = invoice.Id;
-                _context.InvoicePromotions.Add(ip);
+                // Setup solo si es la primera factura del contrato
+                decimal currentSetupBase = (!setupAlreadyApplied && isFirstInvoice)
+                    ? services.Sum(s => s.SetupPrice)
+                    : 0;
+
+                if (currentSetupBase > 0)
+                    setupBaseAmount = currentSetupBase;
+
+                var promotions = await GetApplicablePromotions(contract, periodStart, periodEnd);
+
+                var (monthlyDiscount, setupDiscount, _) =
+                    CalculateDetailedDiscounts(services, promotions, monthlyBaseAmount, currentSetupBase, isFirstInvoice);
+
+                totalMonthlyDiscount += monthlyDiscount;
+                totalSetupDiscount += setupDiscount;
+
+                decimal baseAmount = monthlyBaseAmount + currentSetupBase;
+                decimal totalDisc = monthlyDiscount + setupDiscount;
+                totalAmount += baseAmount - totalDisc;
+
+                if (currentSetupBase > 0)
+                    setupAlreadyApplied = true;
+
+                currentStart = currentStart.AddMonths(1);
             }
-            await _context.SaveChangesAsync();
 
             return new InvoiceDTO
             {
-                Id = invoice.Id,
-                PeriodStart = invoice.PeriodStart,
-                PeriodEnd = invoice.PeriodEnd,
-                MonthlyBaseAmount = monthlyBaseAmount,
-                MonthlyDiscountedAmount = monthlyDiscount,
-                SetupBaseAmount = setupBaseAmount,
-                SetupDiscountedAmount = setupDiscount,
-                TotalAmount = invoice.TotalAmount
+                PeriodStart = rangeStart,
+                PeriodEnd = rangeEnd,
+                MonthlyBaseAmount = monthlyBaseAmount,             
+                MonthlyDiscountedAmount = totalMonthlyDiscount,    
+                SetupBaseAmount = setupBaseAmount,                
+                SetupDiscountedAmount = totalSetupDiscount,        
+                TotalAmount = totalAmount                        
             };
         }
+
+
 
         private async Task<Contract?> GetActiveContractFor(int subscriberId, DateTime startDate)
         {
@@ -108,12 +116,12 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                     )
                 ).ToListAsync();
         }
-
         private (decimal monthly, decimal setup, List<InvoicePromotion>) CalculateDetailedDiscounts(
-            List<Service> services,
-            List<Promotion> promotions,
-            decimal monthlyBase,
-            decimal setupBase)
+    List<Service> services,
+    List<Promotion> promotions,
+    decimal monthlyBase,
+    decimal setupBase,
+    bool isFirstInvoice)
         {
             decimal monthlyDiscount = 0;
             decimal setupDiscount = 0;
@@ -147,14 +155,28 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                             _ => 0
                         };
                     }
-                    monthlyDiscount += discount;
+
+                    if (discount > 0)
+                    {
+                        monthlyDiscount += discount;
+                        invoicePromos.Add(new InvoicePromotion
+                        {
+                            PromotionId = promo.Id,
+                            DiscountAmount = discount
+                        });
+                    }
                 }
+
                 else if (promo.AppliesTo == AppliesTo.SETUP)
                 {
+                    // Ignorar promociones de instalación si no es la primera factura o el monto base es 0
+                    if (!isFirstInvoice || setupBase == 0)
+                        continue;
+
                     if (promo.ServiceId.HasValue)
                     {
                         var service = services.FirstOrDefault(s => s.Id == promo.ServiceId.Value);
-                        if (service != null)
+                        if (service != null && service.SetupPrice > 0)
                         {
                             discount = promo.DiscountType switch
                             {
@@ -173,16 +195,16 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                             _ => 0
                         };
                     }
-                    setupDiscount += discount;
-                }
 
-                if (discount > 0)
-                {
-                    invoicePromos.Add(new InvoicePromotion
+                    if (discount > 0)
                     {
-                        PromotionId = promo.Id,
-                        DiscountAmount = discount
-                    });
+                        setupDiscount += discount;
+                        invoicePromos.Add(new InvoicePromotion
+                        {
+                            PromotionId = promo.Id,
+                            DiscountAmount = discount
+                        });
+                    }
                 }
             }
 
