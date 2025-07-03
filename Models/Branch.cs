@@ -15,7 +15,6 @@ namespace BE_MEGA_PROJECT.Models
         [MaxLength(255)]
         public string? Address { get; set; }
 
-        // Navegación opcional
         public ICollection<Subscriber> Subscribers { get; set; }
 
     }

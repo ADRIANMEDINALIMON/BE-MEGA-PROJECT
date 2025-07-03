@@ -121,11 +121,24 @@ namespace BE_MEGA_PROJECT.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted = await _service.Delete(id);
-            if (!deleted) {
-                return StatusCode(404, new { message = "Promocion no encontrada." });
+
+            try
+            {
+                var deleted = await _service.Delete(id);
+                if (!deleted)
+                    return NotFound(new { message = "Promoción no encontrada." });
+
+                return Ok(new { message = "Promoción eliminada correctamente." });
             }
-            return deleted ? Ok() : NotFound();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor.", details = ex.Message });
+            }
+
         }
     }
 }

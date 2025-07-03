@@ -11,7 +11,6 @@
         public decimal SetupDiscountedAmount { get; set; }
         public decimal TotalAmount { get; set; }
 
-        // Propiedades calculadas para facilitar el uso
         public decimal MonthlyFinalAmount => MonthlyBaseAmount - MonthlyDiscountedAmount;
         public decimal SetupFinalAmount => SetupBaseAmount - SetupDiscountedAmount;
         public decimal TotalBaseAmount => MonthlyBaseAmount + SetupBaseAmount;

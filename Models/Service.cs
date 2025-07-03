@@ -15,7 +15,6 @@ namespace BE_MEGA_PROJECT.Models
         public decimal MonthlyPrice { get; set; }
         public decimal SetupPrice { get; set; }
 
-        // Navegación inversa
         public ICollection<PackageService> PackageServices { get; set; }
         [JsonIgnore]
         public ICollection<Promotion> Promotions { get; set; }

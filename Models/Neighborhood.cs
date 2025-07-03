@@ -17,11 +17,10 @@ namespace BE_MEGA_PROJECT.Models
         [ForeignKey("City")]
         public int CityId { get; set; }
 
-        // Esta referencia al padre no se serializará
+
         [JsonIgnore]
         public City City { get; set; }
 
-        // Igual con los subscribers si también vuelven al neighborhood
         [JsonIgnore]
         public ICollection<Subscriber> Subscribers { get; set; }
     }

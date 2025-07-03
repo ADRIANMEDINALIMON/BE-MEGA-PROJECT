@@ -28,9 +28,7 @@ namespace BE_MEGA_PROJECT.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            /*-------------------------*
-             *  CLAVES COMPUESTAS      *
-             *-------------------------*/
+           
             modelBuilder.Entity<ContractPromotion>()
                 .HasKey(cp => new { cp.ContractId, cp.PromotionId });
 
@@ -40,9 +38,6 @@ namespace BE_MEGA_PROJECT.Data
             modelBuilder.Entity<PackageService>()
                 .HasKey(ps => new { ps.PackageId, ps.ServiceId });
 
-            /*-------------------------*
-             *  PRECISIÓN DECIMALES    *
-             *-------------------------*/
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.BaseAmount)
                 .HasPrecision(10, 2);
@@ -71,9 +66,6 @@ namespace BE_MEGA_PROJECT.Data
                 .Property(ip => ip.DiscountAmount)
                 .HasPrecision(10, 2);
 
-            /*-------------------------*
-             *  ENUM ↔️ STRING         *
-             *-------------------------*/
             modelBuilder.Entity<Promotion>()
                 .Property(p => p.DiscountType)
                 .HasConversion<string>();
@@ -86,18 +78,12 @@ namespace BE_MEGA_PROJECT.Data
                 .Property(p => p.AppliesTo)
                 .HasConversion<string>();
 
-            /*----------------------------------------------------*
-             *  RELACIONES (evitar multiple-cascade paths)        *
-             *----------------------------------------------------*/
-
-            // Subscriptores → Neighborhoods  (mantiene cascada)
             modelBuilder.Entity<Subscriber>()
                 .HasOne(s => s.Neighborhood)
                 .WithMany(n => n.Subscribers)
                 .HasForeignKey(s => s.NeighborhoodId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Subscriptores → Cities (sin cascada)
             modelBuilder.Entity<Subscriber>()
                 .HasOne(s => s.City)
                 .WithMany(c => c.Subscribers)
@@ -106,16 +92,21 @@ namespace BE_MEGA_PROJECT.Data
             
             modelBuilder.Entity<Invoice>()
                 .HasOne(i => i.Subscriber)
-                .WithMany(s => s.Invoices)           // necesitas esta colección en Subscriber
+                .WithMany(s => s.Invoices)           
                 .HasForeignKey(i => i.SubscriberId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Invoice → Contract  (mantén cascada)
+           
             modelBuilder.Entity<Invoice>()
                 .HasOne(i => i.Contract)
-                .WithMany(c => c.Invoices)           // y esta en Contract
+                .WithMany(c => c.Invoices)           
                 .HasForeignKey(i => i.ContractId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<InvoicePromotion>()
+             .HasOne<Promotion>()
+            .WithMany()
+            .HasForeignKey(ip => ip.PromotionId)
+            .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

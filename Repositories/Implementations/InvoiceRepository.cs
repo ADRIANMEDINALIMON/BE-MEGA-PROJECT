@@ -23,11 +23,10 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
 
             var services = GetContractServices(contract).ToList();
 
-            // Base mensual unitaria (para mostrar en el DTO)
             decimal monthlyBaseAmount = services.Sum(s => s.MonthlyPrice);
             decimal setupBaseAmount = 0;
 
-            // Acumuladores de descuento total
+            
             decimal totalMonthlyDiscount = 0;
             decimal totalSetupDiscount = 0;
             decimal totalAmount = 0;
@@ -45,7 +44,6 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                 bool isFirstInvoice = contract.StartDate.Month == periodStart.Month &&
                                       contract.StartDate.Year == periodStart.Year;
 
-                // Setup solo si es la primera factura del contrato
                 decimal currentSetupBase = (!setupAlreadyApplied && isFirstInvoice)
                     ? services.Sum(s => s.SetupPrice)
                     : 0;
@@ -55,8 +53,8 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
 
                 var promotions = await GetApplicablePromotions(contract, periodStart, periodEnd);
 
-                var (monthlyDiscount, setupDiscount, _) =
-                    CalculateDetailedDiscounts(services, promotions, monthlyBaseAmount, currentSetupBase, isFirstInvoice);
+                var (monthlyDiscount, setupDiscount) =
+    CalculateDetailedDiscounts(services, promotions, monthlyBaseAmount, currentSetupBase, isFirstInvoice);
 
                 totalMonthlyDiscount += monthlyDiscount;
                 totalSetupDiscount += setupDiscount;
@@ -116,16 +114,15 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                     )
                 ).ToListAsync();
         }
-        private (decimal monthly, decimal setup, List<InvoicePromotion>) CalculateDetailedDiscounts(
-    List<Service> services,
-    List<Promotion> promotions,
-    decimal monthlyBase,
-    decimal setupBase,
-    bool isFirstInvoice)
+        private (decimal monthly, decimal setup) CalculateDetailedDiscounts(
+     List<Service> services,
+     List<Promotion> promotions,
+     decimal monthlyBase,
+     decimal setupBase,
+     bool isFirstInvoice)
         {
             decimal monthlyDiscount = 0;
             decimal setupDiscount = 0;
-            var invoicePromos = new List<InvoicePromotion>();
 
             foreach (var promo in promotions)
             {
@@ -157,19 +154,11 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                     }
 
                     if (discount > 0)
-                    {
                         monthlyDiscount += discount;
-                        invoicePromos.Add(new InvoicePromotion
-                        {
-                            PromotionId = promo.Id,
-                            DiscountAmount = discount
-                        });
-                    }
                 }
 
                 else if (promo.AppliesTo == AppliesTo.SETUP)
                 {
-                    // Ignorar promociones de instalación si no es la primera factura o el monto base es 0
                     if (!isFirstInvoice || setupBase == 0)
                         continue;
 
@@ -197,22 +186,15 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                     }
 
                     if (discount > 0)
-                    {
                         setupDiscount += discount;
-                        invoicePromos.Add(new InvoicePromotion
-                        {
-                            PromotionId = promo.Id,
-                            DiscountAmount = discount
-                        });
-                    }
                 }
             }
 
-            return (monthlyDiscount, setupDiscount, invoicePromos);
+            return (monthlyDiscount, setupDiscount);
         }
 
-        // Método original mantenido para compatibilidad si es necesario
-        public async Task<Invoice> GenerateInvoiceOriginal(int subscriberId, DateTime periodStart, DateTime periodEnd)
+
+       public async Task<Invoice> GenerateInvoiceOriginal(int subscriberId, DateTime periodStart, DateTime periodEnd)
         {
             var contract = await GetActiveContractFor(subscriberId, periodStart);
             if (contract == null)
@@ -224,7 +206,7 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
 
             var applicablePromotions = await GetApplicablePromotions(contract, periodStart, periodEnd);
 
-            var (totalDiscount, invoicePromotions) = CalculateTotalDiscount(services, applicablePromotions, baseAmount);
+            var totalDiscount = CalculateTotalDiscount(services, applicablePromotions, baseAmount);
 
             var invoice = new Invoice
             {
@@ -237,16 +219,16 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                 TotalAmount = baseAmount - totalDiscount,
                 GeneratedAt = DateTime.Now,
             };
+
             _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
             return invoice;
         }
 
-        // Método original de cálculo de descuentos mantenido para compatibilidad
-        private (decimal total, List<InvoicePromotion>) CalculateTotalDiscount(IEnumerable<Service> services, List<Promotion> promotions, decimal baseAmount)
+        
+        private decimal CalculateTotalDiscount(IEnumerable<Service> services, List<Promotion> promotions, decimal baseAmount)
         {
             decimal total = 0;
-            var invoicePromos = new List<InvoicePromotion>();
 
             foreach (var promo in promotions)
             {
@@ -276,14 +258,10 @@ namespace BE_MEGA_PROJECT.Repositories.Implementations
                 }
 
                 total += discount;
-                invoicePromos.Add(new InvoicePromotion
-                {
-                    PromotionId = promo.Id,
-                    DiscountAmount = discount
-                });
             }
 
-            return (total, invoicePromos);
+            return total;
         }
+
     }
 }
